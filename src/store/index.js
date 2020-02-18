@@ -1,7 +1,18 @@
 import Vue from "vue";
 import Vuex from "vuex";
 import axios from "axios";
+import { isValidJwt, EventBus } from './utils'
+
 Vue.use(Vuex);
+
+
+function authenticate (userData) {
+  return axios.post(`api/login/`, userData)
+}
+function register (userData) {
+  return axios.post(`/api/register/`, userData)
+}
+
 
 export default new Vuex.Store({
   state: {
@@ -9,7 +20,9 @@ export default new Vuex.Store({
     message: "",
     disease_list: [],
     alternate_disease: [],
-    disease: ""
+    disease: "",
+    user: {},
+    jwt:''
   },
   mutations: {
     get_disease_def(state, d_def) {
@@ -26,6 +39,15 @@ export default new Vuex.Store({
     },
     get_disease(state, my_disease) {
       state.disease = my_disease;
+    },
+    setUserData (state, payload) {
+      // console.log('setUserData payload = ', payload)
+      state.userData = payload.userData
+    },
+    setJwtToken (state, payload) {
+      // console.log('setJwtToken payload = ', payload)
+      localStorage.token = payload.jwt.token
+      state.jwt = payload.jwt
     }
   },
   actions: {
@@ -128,7 +150,25 @@ export default new Vuex.Store({
             reject(err);
           });
       });
-    }
+    },
+    login (context, userData) {
+      context.commit('setUserData', { userData })
+      return authenticate(userData)
+        .then(response => context.commit('setJwtToken', { jwt: response.data }))
+        .catch(error => {
+          // console.log('Error Authenticating: ', error)
+          EventBus.$emit('failedAuthentication', error)
+        })
+    },
+    register (context, userData) {
+      context.commit('setUserData', { userData })
+      return register(userData)
+        .then(context.dispatch('login', userData))
+        .catch(error => {
+          // console.log('Error Registering: ', error)
+          EventBus.$emit('failedRegistering: ', error)
+        })
+    },
   },
   getters: {
     patient_disease_def: state => {
@@ -145,6 +185,9 @@ export default new Vuex.Store({
     },
     patient_disease: state => {
       return state.disease;
+    },
+    isAuthenticated (state) {
+      return isValidJwt(state.jwt.token)
     }
   }
 });

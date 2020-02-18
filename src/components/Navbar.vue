@@ -68,17 +68,22 @@ export default {
           route: "/"
         },
         {
-          icon: "mdi-account",
-          text: "Team",
-          route: "/team"
-        },
-        {
           icon: "mdi-medical-bag",
           text: "Disease",
           route: "/diseases"
+        },
+        {
+          icon: "mdi-account",
+          text: "Login",
+          route: "/login"
         }
       ]
     };
+  },
+  computed: {
+    isAuthenticated () {
+      return this.$store.getters.isAuthenticated
+    }
   }
 };
 </script>
